@@ -35,12 +35,12 @@ public class Main {
             for (File file : files) {
                 if (file.isFile()) {
                     try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
-                    String line;
-                    StringBuilder content = new StringBuilder();
-                    while ((line = reader.readLine()) != null) {
-                        content.append(line).append("\n");
-                    }
-                    queries.add(content.toString());
+                        String line;
+                        StringBuilder content = new StringBuilder();
+                        while ((line = reader.readLine()) != null) {
+                            content.append(line).append("\n");
+                        }
+                        queries.add(content.toString());
                     } catch (IOException e) {
                         System.err.println("Error reading file: " + file.getName() + ". Skipping...");
                     }
@@ -51,25 +51,22 @@ public class Main {
 
         // Establish a connection to the BaseX server
         try (ClientSession session = new ClientSession(host, port, username, password)) {
-            logger.info("Connected to BaseX server.");
-
+            System.out.println("Connected to BaseX server.");
             session.execute(new Open("sports.meta.stackexchange"));
 
-            int i = 1;
+            int queryIndex = 1;
             for (String query : queries) {
                 try {
                     String result = session.execute(new XQuery(query));
-
-                    // Write the result to an XML file with the same name as the original file
-                    File outputFile = new File("./data/outputs/result_" + i + ".xml");
+                    File outputFile = new File("./data/outputs/result_" + queryIndex + ".xml");
                     try (FileWriter writer = new FileWriter(outputFile)) {
                         writer.write(result);
                     }
-                    System.out.println("Result of query " + i + " saved to: " + outputFile.getAbsolutePath());
+                    System.out.println("Query " + queryIndex + " done");
                 } catch (BaseXException e) {
                     logger.error("Error executing the query: " + e.getMessage());
                 }
-                i++;
+                queryIndex++;
             }
 
         } catch (BaseXException e) {
