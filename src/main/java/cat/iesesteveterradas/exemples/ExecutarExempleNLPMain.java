@@ -18,8 +18,10 @@ import edu.stanford.nlp.pipeline.*;
 import edu.stanford.nlp.sentiment.SentimentCoreAnnotations;
 import edu.stanford.nlp.util.CoreMap;
 
-
+import java.io.BufferedWriter;
 import java.io.FileInputStream;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
 import java.util.List;
@@ -96,6 +98,9 @@ public class ExecutarExempleNLPMain {
         Annotation document = new Annotation(text);
         pipeline.annotate(document);
 
+        ///// 
+        boolean firstName = false;
+
         // Obté les frases del document
         List<CoreMap> sentencesList2 = document.get(SentencesAnnotation.class);
 
@@ -113,21 +118,45 @@ public class ExecutarExempleNLPMain {
                 String ne = token.get(NamedEntityTagAnnotation.class);
                 logger.info("Entity: " + word + " (" + ne + ")");
             }
+
+            /////
+            String name = ""; 
             
             // Reconeixement de Named Entity Recognition (NER)
             for (CoreLabel token : sentence.get(TokensAnnotation.class)) {
                 String word = token.getString(TextAnnotation.class);
                 String ner = token.getString(NamedEntityTagAnnotation.class);
                 
+                if ("PERSON".equals(ner)) {
+                    if (!firstName) {
+                        name = word;
+                        firstName = true;
+                    } else {
+                        String mssg = "Entity Detected: " + name + " " + word + " - Entity Type: " + ner;
+                        logger.info(mssg);
+                        writeToFile(mssg);
+                        firstName = false;
+                    }
+                } 
                 // Comprova si el token és una entitat anomenada (NER)
-                if (!"O".equals(ner)) { // Ignora els tokens que no són entitats (etiquetats com 'O')
+                else if (!"O".equals(ner)) { // Ignora els tokens que no són entitats (etiquetats com 'O')
                     logger.info("Entity Detected: " + word + " - Entity Type: " + ner);
-                }
+                } 
             }
 
             // Anàlisi de sentiments
             String sentiment = sentence.get(SentimentCoreAnnotations.SentimentClass.class);
             logger.info("Sentiment: " + sentiment);
         }        
+    }
+
+    public static void writeToFile(String line) {
+        String filePath = "./data/noms_propis.txt";
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(filePath, true))) {
+            writer.write(line);
+            writer.newLine(); 
+        } catch (IOException e) {
+            System.err.println("Error writing to the file: " + e.getMessage());
+        }
     }
 }
